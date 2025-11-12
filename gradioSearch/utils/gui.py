@@ -17,7 +17,7 @@ def create_search_interface(
     Create Gradio interface for FAISS database search
     
     Args:
-        search_function: Function that takes query string and returns search results
+        search_function: Function that takes query string and topk, returns search results
         metadata_keys: List of metadata column names to display
         topk: Number of top results to retrieve
     
@@ -30,7 +30,7 @@ def create_search_interface(
         Format search results into dataframe and detail view
         
         Args:
-            results: List of search result dictionaries with 'content', 'metadata', 'score'
+            results: List of search result dictionaries with 'content', 'metadata', 'similarity_score'
         
         Returns:
             Tuple of (dataframe, empty_detail_text)
@@ -45,7 +45,7 @@ def create_search_interface(
             row = {}
             
             # Add similarity score as first column (rounded to 0.01)
-            row['Similarity'] = round(result.get('score', 0.0), 2)
+            row['Similarity'] = round(result.get('similarity_score', 0.0), 2)
             
             # Add metadata columns
             metadata = result.get('metadata', {})
@@ -101,8 +101,8 @@ def create_search_interface(
             empty_df = pd.DataFrame(columns=['Similarity'] + metadata_keys + ['Content'])
             return empty_df, "", []
         
-        # Perform the search
-        results = search_function(query, topk)
+        # Perform the search with topk parameter
+        results = search_function(query)
         
         # Format results for display
         df, _ = format_search_results(results)
