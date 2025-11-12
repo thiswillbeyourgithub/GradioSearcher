@@ -31,7 +31,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "gradioSearch=gradioSearch.gradioSearch:main",
+            "gradioSearch=gradioSearch.cli:main",
         ],
     },
     classifiers=[
