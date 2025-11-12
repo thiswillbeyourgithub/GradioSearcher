@@ -106,7 +106,9 @@ def main():
         # Load FAISS database
         print(f"Loading FAISS database from: {args.db_path}")
         try:
-            vectorstore = FAISS.load_local(args.db_path, embedding_model)
+            vectorstore = FAISS.load_local(
+                args.db_path, embedding_model, allow_dangerous_deserialization=True
+            )
         except Exception as e:
             print(f"Error loading FAISS database from '{args.db_path}': {e}")
             print(
