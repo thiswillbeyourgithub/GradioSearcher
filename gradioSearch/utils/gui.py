@@ -176,4 +176,4 @@ def launch_gui(
         server_port: Port to run the server on
     """
     interface = create_search_interface(search_function, metadata_keys, topk)
-    interface.launch(share=share, server_port=server_port)
+    interface.launch(share=share, server_port=server_port, server_name="0.0.0.0")
