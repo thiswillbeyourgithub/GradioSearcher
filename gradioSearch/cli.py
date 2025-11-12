@@ -171,14 +171,20 @@ def main():
 
                 results = []
                 for i, (doc, score) in enumerate(docs_with_scores):
-                    print(f"DEBUG: Processing result {i}, score={score}, doc type={type(doc)}")
+                    print(
+                        f"DEBUG: Processing result {i}, score={score}, doc type={type(doc)}"
+                    )
                     print(f"DEBUG: doc.page_content type={type(doc.page_content)}")
-                    print(f"DEBUG: doc.metadata type={type(doc.metadata)}, value={doc.metadata}")
-                    
+                    print(
+                        f"DEBUG: doc.metadata type={type(doc.metadata)}, value={doc.metadata}"
+                    )
+
                     result = {
                         "similarity_score": float(score),
                         "content": str(doc.page_content) if doc.page_content else "",
-                        "metadata": dict(doc.metadata) if isinstance(doc.metadata, dict) else {},
+                        "metadata": dict(doc.metadata)
+                        if isinstance(doc.metadata, dict)
+                        else {},
                     }
                     results.append(result)
 
@@ -186,6 +192,7 @@ def main():
                 return results
             except Exception as e:
                 import traceback
+
                 print(f"Error during search: {e}")
                 print(f"Traceback:\n{traceback.format_exc()}")
                 return []
