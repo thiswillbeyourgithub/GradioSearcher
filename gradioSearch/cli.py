@@ -163,22 +163,31 @@ def main():
                 search_query = query.strip() if query and query.strip() else " "
 
                 # Perform similarity search
+                print(f"DEBUG: Performing search for: '{search_query}' with k={topk}")
                 docs_with_scores = vectorstore.similarity_search_with_score(
                     search_query, k=topk
                 )
+                print(f"DEBUG: Got {len(docs_with_scores)} results")
 
                 results = []
-                for doc, score in docs_with_scores:
+                for i, (doc, score) in enumerate(docs_with_scores):
+                    print(f"DEBUG: Processing result {i}, score={score}, doc type={type(doc)}")
+                    print(f"DEBUG: doc.page_content type={type(doc.page_content)}")
+                    print(f"DEBUG: doc.metadata type={type(doc.metadata)}, value={doc.metadata}")
+                    
                     result = {
-                        "similarity_score": round(score, 2),
-                        "content": doc.page_content or "",
-                        "metadata": doc.metadata,  # Keep metadata nested for GUI
+                        "similarity_score": float(score),
+                        "content": str(doc.page_content) if doc.page_content else "",
+                        "metadata": dict(doc.metadata) if isinstance(doc.metadata, dict) else {},
                     }
                     results.append(result)
 
+                print(f"DEBUG: Returning {len(results)} formatted results")
                 return results
             except Exception as e:
+                import traceback
                 print(f"Error during search: {e}")
+                print(f"Traceback:\n{traceback.format_exc()}")
                 return []
 
         # Launch GUI
