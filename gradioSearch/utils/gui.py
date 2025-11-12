@@ -9,152 +9,156 @@ import json
 
 
 def create_search_interface(
-    search_function,
-    metadata_keys: List[str],
-    topk: int = 50
+    search_function, metadata_keys: List[str], topk: int = 50
 ) -> gr.Blocks:
     """
     Create Gradio interface for FAISS database search
-    
+
     Args:
         search_function: Function that takes query string and topk, returns search results
         metadata_keys: List of metadata column names to display
         topk: Number of top results to retrieve
-    
+
     Returns:
         Gradio Blocks interface
     """
-    
-    def format_search_results(results: List[Dict[str, Any]]) -> Tuple[pd.DataFrame, str]:
+
+    def format_search_results(
+        results: List[Dict[str, Any]],
+    ) -> Tuple[pd.DataFrame, str]:
         """
         Format search results into dataframe and detail view
-        
+
         Args:
             results: List of search result dictionaries with 'content', 'metadata', 'similarity_score'
-        
+
         Returns:
             Tuple of (dataframe, empty_detail_text)
         """
         if not results:
-            empty_df = pd.DataFrame(columns=['Similarity'] + metadata_keys + ['Content'])
+            empty_df = pd.DataFrame(
+                columns=["Similarity"] + metadata_keys + ["Content"]
+            )
             return empty_df, ""
-        
+
         # Prepare dataframe data
         df_data = []
         for i, result in enumerate(results):
             row = {}
-            
+
             # Add similarity score as first column (rounded to 0.01)
-            row['Similarity'] = round(result.get('similarity_score', 0.0), 2)
-            
+            row["Similarity"] = round(result.get("similarity_score", 0.0), 2)
+
             # Add metadata columns
-            metadata = result.get('metadata', {})
+            metadata = result.get("metadata", {})
             for key in metadata_keys:
-                row[key] = metadata.get(key, '')
-            
+                row[key] = metadata.get(key, "")
+
             # Add cropped content (limit to 100 chars)
-            content = result.get('content', '')
-            row['Content'] = content[:100] + '...' if len(content) > 100 else content
-            
+            content = result.get("content", "")
+            row["Content"] = content[:100] + "..." if len(content) > 100 else content
+
             df_data.append(row)
-        
+
         df = pd.DataFrame(df_data)
         return df, ""
-    
+
     def on_row_select(evt: gr.SelectData, results_state) -> str:
         """
         Handle row selection in dataframe to show document details
-        
+
         Args:
             evt: Gradio SelectData event
             results_state: Current search results
-        
+
         Returns:
             Formatted document content and metadata
         """
         if not results_state or evt.index[0] >= len(results_state):
             return ""
-        
+
         selected_result = results_state[evt.index[0]]
-        content = selected_result.get('content', '')
-        metadata = selected_result.get('metadata', {})
-        
+        content = selected_result.get("content", "")
+        metadata = selected_result.get("metadata", {})
+
         # Format the detail view
         detail_text = f"**Document Content:**\n\n{content}\n\n"
         detail_text += f"**Metadata:**\n\n"
         detail_text += json.dumps(metadata, indent=2, ensure_ascii=False)
-        
+
         return detail_text
-    
-    def perform_search(query: str, results_state) -> Tuple[pd.DataFrame, str, List[Dict]]:
+
+    def perform_search(
+        query: str, results_state
+    ) -> Tuple[pd.DataFrame, str, List[Dict]]:
         """
         Perform search and update interface
-        
+
         Args:
             query: Search query string
             results_state: Current results state
-        
+
         Returns:
             Tuple of (updated_dataframe, empty_detail, new_results_state)
         """
         if not query.strip():
-            empty_df = pd.DataFrame(columns=['Similarity'] + metadata_keys + ['Content'])
+            empty_df = pd.DataFrame(
+                columns=["Similarity"] + metadata_keys + ["Content"]
+            )
             return empty_df, "", []
-        
+
         # Perform the search with topk parameter
         results = search_function(query, topk)
-        
+
         # Format results for display
         df, _ = format_search_results(results)
-        
+
         return df, "", results
-    
+
     # Create the Gradio interface
     with gr.Blocks(title="gradioSearch - FAISS Database Search") as interface:
         gr.Markdown("# gradioSearch - FAISS Database Search")
-        
+
         # State to store current search results
         results_state = gr.State([])
-        
+
         # Search input at the top
         search_input = gr.Textbox(
             label="Search Query",
             placeholder="Enter your search query and press Enter...",
-            lines=1
+            lines=1,
         )
-        
+
         # Layout with dataframe on left, details on right
         with gr.Row():
             with gr.Column(scale=2):
                 results_df = gr.Dataframe(
                     label="Search Results",
-                    headers=['Similarity'] + metadata_keys + ['Content'],
-                    datatype=['number'] + ['str'] * (len(metadata_keys) + 1),
+                    headers=["Similarity"] + metadata_keys + ["Content"],
+                    datatype=["number"] + ["str"] * (len(metadata_keys) + 1),
                     interactive=False,
                     wrap=True,
                     row_count=(10, "dynamic"),
-                    column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"]
+                    column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
                 )
-            
+
             with gr.Column(scale=1):
                 document_detail = gr.Markdown(
                     label="Document Details",
-                    value="Select a row from the search results to view document details."
+                    value="Select a row from the search results to view document details.",
                 )
-        
+
         # Event handlers
         search_input.submit(
             fn=perform_search,
             inputs=[search_input, results_state],
-            outputs=[results_df, document_detail, results_state]
+            outputs=[results_df, document_detail, results_state],
         )
-        
+
         results_df.select(
-            fn=on_row_select,
-            inputs=[results_state],
-            outputs=[document_detail]
+            fn=on_row_select, inputs=[results_state], outputs=[document_detail]
         )
-    
+
     return interface
 
 
@@ -163,11 +167,11 @@ def launch_gui(
     metadata_keys: List[str],
     topk: int = 50,
     share: bool = False,
-    server_port: Optional[int] = None
+    server_port: Optional[int] = None,
 ) -> None:
     """
     Launch the Gradio interface
-    
+
     Args:
         search_function: Function that performs the search
         metadata_keys: List of metadata keys to display
