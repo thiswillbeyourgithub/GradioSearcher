@@ -15,7 +15,7 @@
 - ADDED: utils folder with __init__.py. REASON: package structure for GUI components. STATUS: done
 
 ## IN_PROGRESS
-- CREATE: utils/gui.py with Gradio interface. REASON: next step for interactive search GUI. STATUS: pending
+- IMPLEMENT: FAISS database loading in gradioSearch.py. REASON: connect GUI to actual search functionality. STATUS: pending
 
 ## TODO
 - P0: Implement FAISS database loading and search functionality in gradioSearch.py
