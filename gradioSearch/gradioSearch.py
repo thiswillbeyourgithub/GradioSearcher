@@ -5,7 +5,7 @@ Main module for gradioSearch CLI tool
 import argparse
 import sys
 from pathlib import Path
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any
 from .utils.gui import launch_gui
