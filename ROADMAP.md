@@ -15,12 +15,10 @@
 (none yet)
 
 ## IN_PROGRESS
-- SETUP: Create basic project structure with required files
+- ADDED: CLI argument parsing in gradioSearch.py. REASON: foundation for all other functionality. STATUS: done
 
 ## TODO
-- P0: Create gradioSearch folder structure (__init__.py, __main__.py, gradioSearch.py)
 - P0: Create utils folder with __init__.py
-- P0: Implement CLI argument parsing (db_path, embedding_model, metadata_keys, topk)
 - P0: Create utils/gui.py with Gradio interface
 - P1: Implement FAISS database loading and search functionality
 - P1: Add document embedding with sentence-transformers
