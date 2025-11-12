@@ -76,19 +76,19 @@ def main():
         vectorstore = FAISS.load_local(args.db_path, embedding_model)
         
         # Create search function
-        def search_function(query: str) -> List[Dict[str, Any]]:
+        def search_function(query: str, topk: int = args.topk) -> List[Dict[str, Any]]:
             if not query.strip():
                 return []
             
             # Perform similarity search
-            docs_with_scores = vectorstore.similarity_search_with_score(query, k=args.topk)
+            docs_with_scores = vectorstore.similarity_search_with_score(query, k=topk)
             
             results = []
             for doc, score in docs_with_scores:
                 result = {
                     'similarity_score': round(score, 2),
                     'content': doc.page_content,
-                    'metadata': doc.metadata
+                    **doc.metadata  # Flatten metadata into the result dict
                 }
                 results.append(result)
             
