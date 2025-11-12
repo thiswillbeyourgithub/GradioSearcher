@@ -8,7 +8,7 @@ from pathlib import Path
 from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any
-from gradioSearch.utils.gui import launch_gui
+from .utils.gui import launch_gui
 
 
 def parse_args():
