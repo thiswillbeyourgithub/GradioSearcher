@@ -102,7 +102,7 @@ def create_search_interface(
             return empty_df, "", []
         
         # Perform the search with topk parameter
-        results = search_function(query)
+        results = search_function(query, topk)
         
         # Format results for display
         df, _ = format_search_results(results)
