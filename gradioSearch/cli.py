@@ -161,7 +161,7 @@ def main():
             try:
                 # For empty queries, use a space to get initial documents
                 search_query = query.strip() if query and query.strip() else " "
-                
+
                 # Perform similarity search
                 docs_with_scores = vectorstore.similarity_search_with_score(
                     search_query, k=topk
