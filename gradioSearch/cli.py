@@ -158,13 +158,13 @@ def main():
 
         # Create search function with error handling
         def search_function(query: str, topk: int = args.topk) -> List[Dict[str, Any]]:
-            if not query or not query.strip():
-                return []
-
             try:
+                # For empty queries, use a space to get initial documents
+                search_query = query.strip() if query and query.strip() else " "
+                
                 # Perform similarity search
                 docs_with_scores = vectorstore.similarity_search_with_score(
-                    query, k=topk
+                    search_query, k=topk
                 )
 
                 results = []

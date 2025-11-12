@@ -101,13 +101,7 @@ def create_search_interface(
         Returns:
             Tuple of (updated_dataframe, empty_detail, new_results_state)
         """
-        if not query.strip():
-            empty_df = pd.DataFrame(
-                columns=["Similarity"] + metadata_keys + ["Content"]
-            )
-            return empty_df, "", []
-
-        # Perform the search with topk parameter
+        # Perform the search with topk parameter (empty queries return initial documents)
         results = search_function(query, topk)
 
         # Format results for display
@@ -115,12 +109,16 @@ def create_search_interface(
 
         return df, "", results
 
+    # Get initial results to populate the dataframe on load
+    initial_results = search_function("", topk)
+    initial_df, _ = format_search_results(initial_results)
+
     # Create the Gradio interface
     with gr.Blocks(title="gradioSearch - FAISS Database Search") as interface:
         gr.Markdown("# gradioSearch - FAISS Database Search")
 
         # State to store current search results
-        results_state = gr.State([])
+        results_state = gr.State(initial_results)
 
         # Search input at the top
         search_input = gr.Textbox(
@@ -140,6 +138,7 @@ def create_search_interface(
                     wrap=True,
                     row_count=(10, "dynamic"),
                     column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
+                    value=initial_df,
                 )
 
             with gr.Column(scale=1):
