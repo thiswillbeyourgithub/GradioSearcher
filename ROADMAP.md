@@ -12,13 +12,12 @@
 - ENABLE: Configurable embedding models, metadata columns, and top-k results
 
 ## COMPLETED
-(none yet)
+- ADDED: utils folder with __init__.py. REASON: package structure for GUI components. STATUS: done
 
 ## IN_PROGRESS
-- ADDED: CLI argument parsing in gradioSearch.py. REASON: foundation for all other functionality. STATUS: done
+- CREATE: utils/gui.py with Gradio interface. REASON: next step for interactive search GUI. STATUS: pending
 
 ## TODO
-- P0: Create utils folder with __init__.py
 - P0: Create utils/gui.py with Gradio interface
 - P1: Implement FAISS database loading and search functionality
 - P1: Add document embedding with sentence-transformers
