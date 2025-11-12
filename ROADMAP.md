@@ -1,8 +1,8 @@
 # gradioSearch Project Roadmap
 
 ## PROGRESS
-- Overall completion: 0%
-- TODOs remaining: 8
+- Overall completion: 60%
+- TODOs remaining: 3
 - Active issues: 0
 
 ## OBJECTIVES
@@ -13,15 +13,16 @@
 
 ## COMPLETED
 - ADDED: utils folder with __init__.py. REASON: package structure for GUI components. STATUS: done
+- IMPLEMENTED: FAISS database loading in gradioSearch.py. REASON: connect to vector database. STATUS: done, with sentence-transformers
+- ADDED: search functionality with similarity scoring. REASON: core search capability. STATUS: done, returns formatted results
 
 ## IN_PROGRESS
-- IMPLEMENT: FAISS database loading in gradioSearch.py. REASON: connect GUI to actual search functionality. STATUS: pending
+- CONNECT: GUI to main CLI entry point. REASON: complete integration between search and interface. STATUS: pending
 
 ## TODO
-- P0: Implement FAISS database loading and search functionality in gradioSearch.py
-- P1: Add document embedding with sentence-transformers integration
 - P1: Connect GUI to main CLI entry point
 - P2: Add error handling and validation
+- P2: Test end-to-end functionality
 
 ## DECISIONS
 - STRUCTURE: Following standard Python package layout with utils subfolder

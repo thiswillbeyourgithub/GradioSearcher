@@ -5,6 +5,10 @@ Main module for gradioSearch CLI tool
 import argparse
 import sys
 from pathlib import Path
+from langchain.vectorstores import FAISS
+from sentence_transformers import SentenceTransformer
+from typing import List, Dict, Any
+from .utils.gui import launch_gui
 
 
 def parse_args():
@@ -62,7 +66,41 @@ def main():
     print(f"Metadata keys: {metadata_keys}")
     print(f"Top-k results: {args.topk}")
     
-    # TODO: Initialize GUI and start application
+    try:
+        # Load embedding model
+        print(f"Loading embedding model: {args.embedding_model}")
+        embedding_model = SentenceTransformer(args.embedding_model)
+        
+        # Load FAISS database
+        print(f"Loading FAISS database from: {args.db_path}")
+        vectorstore = FAISS.load_local(args.db_path, embedding_model)
+        
+        # Create search function
+        def search_function(query: str) -> List[Dict[str, Any]]:
+            if not query.strip():
+                return []
+            
+            # Perform similarity search
+            docs_with_scores = vectorstore.similarity_search_with_score(query, k=args.topk)
+            
+            results = []
+            for doc, score in docs_with_scores:
+                result = {
+                    'similarity_score': round(score, 2),
+                    'content': doc.page_content,
+                    'metadata': doc.metadata
+                }
+                results.append(result)
+            
+            return results
+        
+        # Launch GUI
+        print("Starting Gradio interface...")
+        launch_gui(search_function, metadata_keys, args.topk)
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
     
     return 0
 
