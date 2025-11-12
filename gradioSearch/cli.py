@@ -172,7 +172,7 @@ def main():
                     result = {
                         "similarity_score": round(score, 2),
                         "content": doc.page_content or "",
-                        **doc.metadata,  # Flatten metadata into the result dict
+                        "metadata": doc.metadata,  # Keep metadata nested for GUI
                     }
                     results.append(result)
 
