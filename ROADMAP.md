@@ -18,11 +18,10 @@
 - CREATE: utils/gui.py with Gradio interface. REASON: next step for interactive search GUI. STATUS: pending
 
 ## TODO
-- P0: Create utils/gui.py with Gradio interface
-- P1: Implement FAISS database loading and search functionality
-- P1: Add document embedding with sentence-transformers
-- P1: Create dataframe display with similarity scores and metadata
-- P2: Add document content preview panel with pretty printing
+- P0: Implement FAISS database loading and search functionality in gradioSearch.py
+- P1: Add document embedding with sentence-transformers integration
+- P1: Connect GUI to main CLI entry point
+- P2: Add error handling and validation
 
 ## DECISIONS
 - STRUCTURE: Following standard Python package layout with utils subfolder
