@@ -35,7 +35,7 @@ def parse_args():
         "--metadata_keys",
         type=str,
         required=True,
-        help="Comma-separated list of metadata columns to display"
+        help="Comma-separated list of metadata columns to display, or '*' to use all available keys"
     )
     
     parser.add_argument(
@@ -72,14 +72,19 @@ def main():
         return 1
     
     # Parse and validate metadata keys
-    try:
-        metadata_keys = [key.strip() for key in args.metadata_keys.split(',') if key.strip()]
-        if not metadata_keys:
-            print("Error: metadata_keys cannot be empty")
+    metadata_keys_input = args.metadata_keys.strip()
+    if metadata_keys_input == '*':
+        # Will be determined after loading the database
+        metadata_keys = ['*']
+    else:
+        try:
+            metadata_keys = [key.strip() for key in metadata_keys_input.split(',') if key.strip()]
+            if not metadata_keys:
+                print("Error: metadata_keys cannot be empty")
+                return 1
+        except Exception as e:
+            print(f"Error parsing metadata_keys: {e}")
             return 1
-    except Exception as e:
-        print(f"Error parsing metadata_keys: {e}")
-        return 1
     
     print(f"Database path: {args.db_path}")
     print(f"Embedding model: {args.embedding_model}")
@@ -104,6 +109,42 @@ def main():
             print(f"Error loading FAISS database from '{args.db_path}': {e}")
             print("Please check that the path contains a valid Langchain FAISS database")
             return 1
+        
+        # If metadata_keys is '*', extract all unique keys from the database
+        if metadata_keys == ['*']:
+            print("Extracting all metadata keys from database...")
+            try:
+                all_keys = set()
+                
+                # Try to access docstore directly for efficient sampling
+                if hasattr(vectorstore, 'docstore') and hasattr(vectorstore.docstore, '_dict'):
+                    # Sample documents from docstore
+                    count = 0
+                    for doc_id, doc in vectorstore.docstore._dict.items():
+                        if count >= 100:  # Sample up to 100 documents
+                            break
+                        if hasattr(doc, 'metadata') and doc.metadata:
+                            all_keys.update(doc.metadata.keys())
+                        count += 1
+                else:
+                    # Fallback: do a dummy search to get sample documents
+                    try:
+                        sample_docs = vectorstore.similarity_search("sample", k=50)
+                        for doc in sample_docs:
+                            if doc.metadata:
+                                all_keys.update(doc.metadata.keys())
+                    except:
+                        pass
+                
+                if not all_keys:
+                    print("Warning: No metadata keys found in database. Using empty list.")
+                    metadata_keys = []
+                else:
+                    metadata_keys = sorted(list(all_keys))
+                    print(f"Found metadata keys: {metadata_keys}")
+            except Exception as e:
+                print(f"Error extracting metadata keys: {e}")
+                return 1
         
         # Create search function with error handling
         def search_function(query: str, topk: int = args.topk) -> List[Dict[str, Any]]:
