@@ -137,7 +137,6 @@ def create_search_interface(
         # Layout with dataframe on left, details on right
         with gr.Row():
             with gr.Column(scale=2):
-                breakpoint()
                 results_df = gr.Dataframe(
                     label="Search Results",
                     headers=["Similarity", "Content"] + metadata_keys,
@@ -147,7 +146,7 @@ def create_search_interface(
                     row_count=(10, "dynamic"),
                     column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
                     value=initial_df,
-                    max_height=10_000,
+                    max_height=700,
                     show_search="filter",
                     pinned_columns=2,
                     show_row_numbers=True,
