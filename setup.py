@@ -24,7 +24,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
-        "gradio",
+        "gradio==5.50.0",
         "pandas",
         "langchain-community",
         "sentence-transformers",
