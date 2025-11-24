@@ -96,20 +96,21 @@ def create_search_interface(
         return content_text, metadata_text
 
     def perform_search(
-        query: str, results_state
+        query: str, topk_value: int, results_state
     ) -> Tuple[pd.DataFrame, str, str, List[Dict]]:
         """
         Perform search and update interface
 
         Args:
             query: Search query string
+            topk_value: Number of results to retrieve
             results_state: Current results state
 
         Returns:
             Tuple of (updated_dataframe, empty_content, empty_metadata, new_results_state)
         """
         # Perform the search with topk parameter (empty queries return initial documents)
-        results = search_function(query, topk)
+        results = search_function(query, topk_value)
 
         # Format results for display
         df, _ = format_search_results(results)
@@ -132,6 +133,16 @@ def create_search_interface(
             label="Search Query",
             placeholder="Enter your search query and press Enter...",
             lines=1,
+        )
+
+        # Top-k slider
+        topk_slider = gr.Slider(
+            minimum=1,
+            maximum=200,
+            value=topk,
+            step=1,
+            label="Number of Results (Top-K)",
+            interactive=True,
         )
 
         # Layout with dataframe on left, details on right
@@ -166,7 +177,13 @@ def create_search_interface(
         # Event handlers
         search_input.submit(
             fn=perform_search,
-            inputs=[search_input, results_state],
+            inputs=[search_input, topk_slider, results_state],
+            outputs=[results_df, document_content, document_metadata, results_state],
+        )
+
+        topk_slider.change(
+            fn=perform_search,
+            inputs=[search_input, topk_slider, results_state],
             outputs=[results_df, document_content, document_metadata, results_state],
         )
 
