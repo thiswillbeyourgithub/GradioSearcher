@@ -8,15 +8,12 @@ from typing import List, Dict, Any, Optional, Tuple
 import json
 
 
-def create_search_interface(
-    search_function, metadata_keys: List[str], topk: int = 50
-) -> gr.Blocks:
+def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
     """
     Create Gradio interface for FAISS database search
 
     Args:
         search_function: Function that takes query string and topk, returns search results
-        metadata_keys: List of metadata column names to display
         topk: Number of top results to retrieve
 
     Returns:
@@ -25,43 +22,54 @@ def create_search_interface(
 
     def format_search_results(
         results: List[Dict[str, Any]],
-    ) -> Tuple[pd.DataFrame, str]:
+    ) -> pd.DataFrame:
         """
-        Format search results into dataframe and detail view
+        Format search results into dataframe with dynamic columns.
+        Only includes metadata columns that have non-empty values in the results.
 
         Args:
             results: List of search result dictionaries with 'content', 'metadata', 'similarity_score'
 
         Returns:
-            Tuple of (dataframe, empty_detail_text)
+            DataFrame with dynamic columns based on non-empty metadata
         """
         if not results:
-            empty_df = pd.DataFrame(
-                columns=["Similarity"] + metadata_keys + ["Content"]
-            )
-            return empty_df, ""
+            # Return empty dataframe with basic columns
+            return pd.DataFrame(columns=["Similarity", "Content"])
+
+        # Scan all results to find metadata keys with non-empty values
+        metadata_keys_with_values = set()
+        for result in results:
+            metadata = result.get("metadata", {})
+            for key, value in metadata.items():
+                # Include key if value is non-empty (not None, not empty string, not empty list, etc.)
+                if value is not None and value != "" and value != [] and value != {}:
+                    metadata_keys_with_values.add(key)
+
+        # Sort metadata keys for consistent column ordering
+        active_metadata_keys = sorted(list(metadata_keys_with_values))
 
         # Prepare dataframe data
         df_data = []
-        for i, result in enumerate(results):
+        for result in results:
             row = {}
 
-            # Add similarity score as first column (rounded to 0.01)
+            # Add similarity score as first column
             row["Similarity"] = round(result.get("similarity_score", 0.0), 2)
 
-            # Add cropped content (limit to 100 chars) as second column
+            # Add cropped content
             content = result.get("content", "")
             row["Content"] = content[:100] + "..." if len(content) > 100 else content
 
-            # Add metadata columns
+            # Add only the active metadata columns
             metadata = result.get("metadata", {})
-            for key in metadata_keys:
+            for key in active_metadata_keys:
                 row[key] = metadata.get(key, "")
 
             df_data.append(row)
 
         df = pd.DataFrame(df_data)
-        return df, ""
+        return df
 
     def on_row_select(evt: gr.SelectData, results_state) -> Tuple[str, str]:
         """
@@ -112,14 +120,14 @@ def create_search_interface(
         # Perform the search with topk parameter (empty queries return initial documents)
         results = search_function(query, topk_value)
 
-        # Format results for display
-        df, _ = format_search_results(results)
+        # Format results for display with dynamic columns
+        df = format_search_results(results)
 
         return df, "", "", results
 
     # Get initial results to populate the dataframe on load
     initial_results = search_function("", topk)
-    initial_df, _ = format_search_results(initial_results)
+    initial_df = format_search_results(initial_results)
 
     # Create the Gradio interface
     with gr.Blocks(title="gradioSearch - FAISS Database Search") as interface:
@@ -150,18 +158,14 @@ def create_search_interface(
             with gr.Column(scale=2):
                 results_df = gr.Dataframe(
                     label="Search Results",
-                    headers=["Similarity", "Content"] + metadata_keys,
-                    datatype=["number"] + ["str"] * (len(metadata_keys) + 1),
                     interactive=False,
                     wrap=True,
                     row_count=(10, "dynamic"),
-                    column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
                     value=initial_df,
                     max_height=700,
                     show_search="filter",
-                    pinned_columns=2,
+                    pinned_columns=1,  # Pin only the Similarity column
                     show_row_numbers=True,
-                    # buttons=["fullscreen", "copy"],
                     line_breaks=True,
                 )
 
@@ -198,7 +202,6 @@ def create_search_interface(
 
 def launch_gui(
     search_function,
-    metadata_keys: List[str],
     topk: int = 50,
     share: bool = False,
     server_port: Optional[int] = None,
@@ -208,10 +211,9 @@ def launch_gui(
 
     Args:
         search_function: Function that performs the search
-        metadata_keys: List of metadata keys to display
         topk: Number of top results to retrieve
         share: Whether to create a public link
         server_port: Port to run the server on
     """
-    interface = create_search_interface(search_function, metadata_keys, topk)
+    interface = create_search_interface(search_function, topk)
     interface.launch(share=share, server_port=server_port, server_name="0.0.0.0")
