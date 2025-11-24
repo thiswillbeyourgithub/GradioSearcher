@@ -147,6 +147,11 @@ def create_search_interface(
                     column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
                     value=initial_df,
                     max_height=10_000,
+                    show_search="filter",
+                    pinned_columns=2,
+                    show_row_numbers=True,
+                    buttons=["fullscreen", "copy"],
+                    line_breaks=True,
                 )
 
             with gr.Column(scale=1):
