@@ -52,7 +52,9 @@ class SentenceTransformerEmbeddings(Embeddings):
         List[List[float]]
             List of embeddings, one per document
         """
-        return self.model.encode(texts, convert_to_tensor=False, **self.encode_kwargs).tolist()
+        return self.model.encode(
+            texts, convert_to_tensor=False, **self.encode_kwargs
+        ).tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -68,7 +70,9 @@ class SentenceTransformerEmbeddings(Embeddings):
         List[float]
             Query embedding
         """
-        return self.model.encode([text], convert_to_tensor=False, **self.encode_kwargs)[0].tolist()
+        return self.model.encode([text], convert_to_tensor=False, **self.encode_kwargs)[
+            0
+        ].tolist()
 
 
 def parse_args():
@@ -149,7 +153,7 @@ def convert_embeddings(
         Batch size for embedding computation (default: 32)
     """
     print("\n=== Starting Embedding Conversion ===")
-    
+
     # Extract all documents from the vectorstore's docstore
     print("Extracting documents from vectorstore...")
     documents = []
@@ -157,27 +161,27 @@ def convert_embeddings(
         documents = list(vectorstore.docstore._dict.values())
     else:
         raise ValueError("Cannot access docstore to extract documents")
-    
+
     print(f"Found {len(documents)} documents to re-embed")
-    
+
     if not documents:
         print("No documents found. Aborting conversion.")
         return
-    
+
     # Extract texts for embedding
     texts = [doc.page_content for doc in documents]
-    
+
     # Re-compute embeddings in batches with progress bar
     print(f"Re-computing embeddings in batches of {batch_size}...")
     all_embeddings = []
-    
+
     for i in tqdm(range(0, len(texts), batch_size), desc="Embedding batches"):
-        batch_texts = texts[i:i + batch_size]
+        batch_texts = texts[i : i + batch_size]
         batch_embeddings = embedding_model.embed_documents(batch_texts)
         all_embeddings.extend(batch_embeddings)
-    
+
     print(f"Generated {len(all_embeddings)} embeddings")
-    
+
     # Create new FAISS vectorstore from documents and embeddings
     print("Creating new FAISS vectorstore...")
     new_vectorstore = FAISS.from_embeddings(
@@ -185,13 +189,13 @@ def convert_embeddings(
         embedding=embedding_model,
         metadatas=[doc.metadata for doc in documents],
     )
-    
+
     # Save the new vectorstore
     print(f"Saving converted vectorstore to: {output_path}")
     output_path_obj = Path(output_path)
     output_path_obj.parent.mkdir(parents=True, exist_ok=True)
     new_vectorstore.save_local(output_path)
-    
+
     print(f"✓ Conversion complete! New database saved to: {output_path}")
 
 
@@ -245,10 +249,12 @@ def main():
         if not args.output_db_path:
             print("Error: --output-db-path is required when using --convert-embeddings")
             return 1
-        
+
         output_path = Path(args.output_db_path)
         if output_path.exists():
-            print(f"Warning: Output path '{args.output_db_path}' already exists and will be overwritten")
+            print(
+                f"Warning: Output path '{args.output_db_path}' already exists and will be overwritten"
+            )
 
     try:
         # Parse embedding kwargs
@@ -265,7 +271,9 @@ def main():
         # Load embedding model
         print(f"Loading embedding model: {args.embedding_model}")
         try:
-            embedding_model = SentenceTransformerEmbeddings(args.embedding_model, **embedding_kwargs)
+            embedding_model = SentenceTransformerEmbeddings(
+                args.embedding_model, **embedding_kwargs
+            )
         except Exception as e:
             print(f"Error loading embedding model '{args.embedding_model}': {e}")
             print("Please check that the model name is correct and available")
@@ -299,6 +307,7 @@ def main():
                 return 0
             except Exception as e:
                 import traceback
+
                 print(f"Error during conversion: {e}")
                 print(f"Traceback:\n{traceback.format_exc()}")
                 return 1
