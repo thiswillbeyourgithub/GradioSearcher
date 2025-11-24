@@ -25,9 +25,10 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "gradio==5.50.0",
-        "pandas",
-        "langchain-community",
-        "sentence-transformers",
+        "pandas==2.3.3",
+        "langchain-community==0.4.1",
+        "sentence-transformers==5.1.2",
+        "tqdm==4.67.1",
     ],
     entry_points={
         "console_scripts": [
