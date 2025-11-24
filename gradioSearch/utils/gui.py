@@ -49,14 +49,14 @@ def create_search_interface(
             # Add similarity score as first column (rounded to 0.01)
             row["Similarity"] = round(result.get("similarity_score", 0.0), 2)
 
+            # Add cropped content (limit to 100 chars) as second column
+            content = result.get("content", "")
+            row["Content"] = content[:100] + "..." if len(content) > 100 else content
+
             # Add metadata columns
             metadata = result.get("metadata", {})
             for key in metadata_keys:
                 row[key] = metadata.get(key, "")
-
-            # Add cropped content (limit to 100 chars)
-            content = result.get("content", "")
-            row["Content"] = content[:100] + "..." if len(content) > 100 else content
 
             df_data.append(row)
 
@@ -137,6 +137,7 @@ def create_search_interface(
         # Layout with dataframe on left, details on right
         with gr.Row():
             with gr.Column(scale=2):
+                breakpoint()
                 results_df = gr.Dataframe(
                     label="Search Results",
                     headers=["Similarity", "Content"] + metadata_keys,
