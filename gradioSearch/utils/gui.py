@@ -146,6 +146,7 @@ def create_search_interface(
                     row_count=(10, "dynamic"),
                     column_widths=["10%"] + ["15%"] * len(metadata_keys) + ["30%"],
                     value=initial_df,
+                    height=800,
                 )
 
             with gr.Column(scale=1):
