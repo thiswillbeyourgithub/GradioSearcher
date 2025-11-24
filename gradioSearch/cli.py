@@ -8,9 +8,60 @@ from pathlib import Path
 #from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any
+from langchain_core.embeddings import Embeddings
 from .utils.gui import launch_gui
 from .utils.compressed_faiss import CompressedFAISS as FAISS
 
+
+class SentenceTransformerEmbeddings(Embeddings):
+    """Wrapper for SentenceTransformer to make it compatible with LangChain Embeddings interface.
+    
+    This is needed because FAISS expects an Embeddings object with embed_query() and 
+    embed_documents() methods, while SentenceTransformer uses a different API.
+    """
+    
+    def __init__(self, model_name: str):
+        """
+        Initialize with model name.
+        
+        Parameters
+        ----------
+        model_name : str
+            Name of the sentence-transformers model to load
+        """
+        self.model = SentenceTransformer(model_name)
+    
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """
+        Embed a list of documents.
+        
+        Parameters
+        ----------
+        texts : List[str]
+            List of documents to embed
+            
+        Returns
+        -------
+        List[List[float]]
+            List of embeddings, one per document
+        """
+        return self.model.encode(texts, convert_to_tensor=False).tolist()
+    
+    def embed_query(self, text: str) -> List[float]:
+        """
+        Embed a single query.
+        
+        Parameters
+        ----------
+        text : str
+            Query text to embed
+            
+        Returns
+        -------
+        List[float]
+            Query embedding
+        """
+        return self.model.encode([text], convert_to_tensor=False)[0].tolist()
 
 
 def parse_args():
@@ -99,7 +150,7 @@ def main():
         # Load embedding model
         print(f"Loading embedding model: {args.embedding_model}")
         try:
-            embedding_model = SentenceTransformer(args.embedding_model)
+            embedding_model = SentenceTransformerEmbeddings(args.embedding_model)
         except Exception as e:
             print(f"Error loading embedding model '{args.embedding_model}': {e}")
             print("Please check that the model name is correct and available")
