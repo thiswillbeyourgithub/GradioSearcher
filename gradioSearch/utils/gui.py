@@ -130,7 +130,9 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
     initial_df = format_search_results(initial_results)
 
     # Create the Gradio interface
-    with gr.Blocks(title="gradioSearch - FAISS Database Search", fill_height=True, fill_width=True) as interface:
+    with gr.Blocks(
+        title="gradioSearch - FAISS Database Search", fill_height=True, fill_width=True
+    ) as interface:
         gr.Markdown("# gradioSearch - FAISS Database Search")
 
         # State to store current search results
@@ -167,7 +169,10 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
                     pinned_columns=2,  # Pin only the Similarity and Content column
                     show_row_numbers=True,
                     line_breaks=True,
-                    column_widths=["5%", "25%"],  # Set widths for Similarity and Content columns
+                    column_widths=[
+                        "5%",
+                        "25%",
+                    ],  # Set widths for Similarity and Content columns
                 )
 
             with gr.Column(scale=1):
