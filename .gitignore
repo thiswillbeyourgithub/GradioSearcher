@@ -1,1 +1,4 @@
+.env*
 .aider*
+**pycache**
+**egg-info
