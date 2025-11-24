@@ -130,7 +130,7 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
     initial_df = format_search_results(initial_results)
 
     # Create the Gradio interface
-    with gr.Blocks(title="gradioSearch - FAISS Database Search") as interface:
+    with gr.Blocks(title="gradioSearch - FAISS Database Search", fill_height=True, fill_width=True) as interface:
         gr.Markdown("# gradioSearch - FAISS Database Search")
 
         # State to store current search results
