@@ -164,7 +164,7 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
                     value=initial_df,
                     max_height=1200,
                     show_search="filter",
-                    pinned_columns=1,  # Pin only the Similarity column
+                    pinned_columns=2,  # Pin only the Similarity and Content column
                     show_row_numbers=True,
                     line_breaks=True,
                 )
