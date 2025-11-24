@@ -151,7 +151,7 @@ def create_search_interface(
                     show_search="filter",
                     pinned_columns=2,
                     show_row_numbers=True,
-                    #buttons=["fullscreen", "copy"],
+                    # buttons=["fullscreen", "copy"],
                     line_breaks=True,
                 )
 
