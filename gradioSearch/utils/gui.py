@@ -139,7 +139,7 @@ def create_search_interface(
             with gr.Column(scale=2):
                 results_df = gr.Dataframe(
                     label="Search Results",
-                    headers=["Similarity"] + metadata_keys + ["Content"],
+                    headers=["Similarity", "Content"] + metadata_keys,
                     datatype=["number"] + ["str"] * (len(metadata_keys) + 1),
                     interactive=False,
                     wrap=True,
