@@ -63,7 +63,7 @@ def create_search_interface(
         df = pd.DataFrame(df_data)
         return df, ""
 
-    def on_row_select(evt: gr.SelectData, results_state) -> str:
+    def on_row_select(evt: gr.SelectData, results_state) -> Tuple[str, str]:
         """
         Handle row selection in dataframe to show document details
 
@@ -72,25 +72,32 @@ def create_search_interface(
             results_state: Current search results
 
         Returns:
-            Formatted document content and metadata
+            Tuple of (content_text, metadata_text)
         """
         if not results_state or evt.index[0] >= len(results_state):
-            return ""
+            return "", ""
 
         selected_result = results_state[evt.index[0]]
         content = selected_result.get("content", "")
         metadata = selected_result.get("metadata", {})
 
-        # Format the detail view
-        detail_text = f"**Document Content:**\n\n{content}\n\n"
-        detail_text += f"**Metadata:**\n\n"
-        detail_text += json.dumps(metadata, indent=2, ensure_ascii=False)
+        # Format the content
+        content_text = f"**Document Content:**\n\n{content}"
 
-        return detail_text
+        # Format metadata as bullet points with bold keys
+        if metadata:
+            metadata_lines = []
+            for key, value in metadata.items():
+                metadata_lines.append(f"- **{key}:** {value}")
+            metadata_text = "\n".join(metadata_lines)
+        else:
+            metadata_text = "*No metadata available*"
+
+        return content_text, metadata_text
 
     def perform_search(
         query: str, results_state
-    ) -> Tuple[pd.DataFrame, str, List[Dict]]:
+    ) -> Tuple[pd.DataFrame, str, str, List[Dict]]:
         """
         Perform search and update interface
 
@@ -99,7 +106,7 @@ def create_search_interface(
             results_state: Current results state
 
         Returns:
-            Tuple of (updated_dataframe, empty_detail, new_results_state)
+            Tuple of (updated_dataframe, empty_content, empty_metadata, new_results_state)
         """
         # Perform the search with topk parameter (empty queries return initial documents)
         results = search_function(query, topk)
@@ -107,7 +114,7 @@ def create_search_interface(
         # Format results for display
         df, _ = format_search_results(results)
 
-        return df, "", results
+        return df, "", "", results
 
     # Get initial results to populate the dataframe on load
     initial_results = search_function("", topk)
@@ -142,20 +149,25 @@ def create_search_interface(
                 )
 
             with gr.Column(scale=1):
-                document_detail = gr.Markdown(
-                    label="Document Details",
+                document_content = gr.Markdown(
+                    label="Document Content",
                     value="Select a row from the search results to view document details.",
                 )
+
+                with gr.Accordion(label="Metadata", open=False):
+                    document_metadata = gr.Markdown(value="*No metadata available*")
 
         # Event handlers
         search_input.submit(
             fn=perform_search,
             inputs=[search_input, results_state],
-            outputs=[results_df, document_detail, results_state],
+            outputs=[results_df, document_content, document_metadata, results_state],
         )
 
         results_df.select(
-            fn=on_row_select, inputs=[results_state], outputs=[document_detail]
+            fn=on_row_select,
+            inputs=[results_state],
+            outputs=[document_content, document_metadata],
         )
 
     return interface
