@@ -375,8 +375,12 @@ def main():
                         f"DEBUG: doc.metadata type={type(doc.metadata)}, value={doc.metadata}"
                     )
 
+                    # FAISS returns distance scores (lower = more similar)
+                    # Convert to similarity score (higher = more similar)
+                    similarity_score = 1.0 - float(score)
+
                     result = {
-                        "similarity_score": float(score),
+                        "similarity_score": similarity_score,
                         "content": str(doc.page_content) if doc.page_content else "",
                         "metadata": dict(doc.metadata)
                         if isinstance(doc.metadata, dict)
