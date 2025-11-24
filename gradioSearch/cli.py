@@ -5,6 +5,8 @@ Main module for gradioSearch CLI tool
 import argparse
 import sys
 from pathlib import Path
+from tqdm import tqdm
+import json
 
 # from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
@@ -21,16 +23,20 @@ class SentenceTransformerEmbeddings(Embeddings):
     embed_documents() methods, while SentenceTransformer uses a different API.
     """
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, **encode_kwargs):
         """
-        Initialize with model name.
+        Initialize with model name and optional encoding kwargs.
 
         Parameters
         ----------
         model_name : str
             Name of the sentence-transformers model to load
+        **encode_kwargs : dict
+            Additional keyword arguments to pass to model.encode()
+            e.g., batch_size, show_progress_bar, normalize_embeddings, etc.
         """
         self.model = SentenceTransformer(model_name)
+        self.encode_kwargs = encode_kwargs
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
@@ -46,7 +52,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         List[List[float]]
             List of embeddings, one per document
         """
-        return self.model.encode(texts, convert_to_tensor=False).tolist()
+        return self.model.encode(texts, convert_to_tensor=False, **self.encode_kwargs).tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -62,7 +68,7 @@ class SentenceTransformerEmbeddings(Embeddings):
         List[float]
             Query embedding
         """
-        return self.model.encode([text], convert_to_tensor=False)[0].tolist()
+        return self.model.encode([text], convert_to_tensor=False, **self.encode_kwargs)[0].tolist()
 
 
 def parse_args():
@@ -99,7 +105,94 @@ def parse_args():
         help="Number of top results to retrieve (default: 50)",
     )
 
+    parser.add_argument(
+        "--convert-embeddings",
+        action="store_true",
+        help="Convert embeddings: re-compute all embeddings using the specified model and save to output path",
+    )
+
+    parser.add_argument(
+        "--output-db-path",
+        type=str,
+        default=None,
+        help="Output path for converted FAISS database (required when --convert-embeddings is used)",
+    )
+
+    parser.add_argument(
+        "--embedding-kwargs",
+        type=str,
+        default="{}",
+        help='JSON string of kwargs to pass to the embedder, e.g. \'{"batch_size": 32, "normalize_embeddings": true}\'',
+    )
+
     return parser.parse_args()
+
+
+def convert_embeddings(
+    vectorstore: FAISS,
+    embedding_model: SentenceTransformerEmbeddings,
+    output_path: str,
+    batch_size: int = 32,
+) -> None:
+    """
+    Extract all documents from vectorstore and re-compute embeddings.
+
+    Parameters
+    ----------
+    vectorstore : FAISS
+        Source FAISS vectorstore to extract documents from
+    embedding_model : SentenceTransformerEmbeddings
+        Embedding model to use for re-computation
+    output_path : str
+        Path to save the new FAISS database
+    batch_size : int
+        Batch size for embedding computation (default: 32)
+    """
+    print("\n=== Starting Embedding Conversion ===")
+    
+    # Extract all documents from the vectorstore's docstore
+    print("Extracting documents from vectorstore...")
+    documents = []
+    if hasattr(vectorstore, "docstore") and hasattr(vectorstore.docstore, "_dict"):
+        documents = list(vectorstore.docstore._dict.values())
+    else:
+        raise ValueError("Cannot access docstore to extract documents")
+    
+    print(f"Found {len(documents)} documents to re-embed")
+    
+    if not documents:
+        print("No documents found. Aborting conversion.")
+        return
+    
+    # Extract texts for embedding
+    texts = [doc.page_content for doc in documents]
+    
+    # Re-compute embeddings in batches with progress bar
+    print(f"Re-computing embeddings in batches of {batch_size}...")
+    all_embeddings = []
+    
+    for i in tqdm(range(0, len(texts), batch_size), desc="Embedding batches"):
+        batch_texts = texts[i:i + batch_size]
+        batch_embeddings = embedding_model.embed_documents(batch_texts)
+        all_embeddings.extend(batch_embeddings)
+    
+    print(f"Generated {len(all_embeddings)} embeddings")
+    
+    # Create new FAISS vectorstore from documents and embeddings
+    print("Creating new FAISS vectorstore...")
+    new_vectorstore = FAISS.from_embeddings(
+        text_embeddings=list(zip(texts, all_embeddings)),
+        embedding=embedding_model,
+        metadatas=[doc.metadata for doc in documents],
+    )
+    
+    # Save the new vectorstore
+    print(f"Saving converted vectorstore to: {output_path}")
+    output_path_obj = Path(output_path)
+    output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+    new_vectorstore.save_local(output_path)
+    
+    print(f"✓ Conversion complete! New database saved to: {output_path}")
 
 
 def main():
@@ -147,11 +240,32 @@ def main():
     print(f"Metadata keys: {metadata_keys}")
     print(f"Top-k results: {args.topk}")
 
+    # Validate conversion mode arguments
+    if args.convert_embeddings:
+        if not args.output_db_path:
+            print("Error: --output-db-path is required when using --convert-embeddings")
+            return 1
+        
+        output_path = Path(args.output_db_path)
+        if output_path.exists():
+            print(f"Warning: Output path '{args.output_db_path}' already exists and will be overwritten")
+
     try:
+        # Parse embedding kwargs
+        try:
+            embedding_kwargs = json.loads(args.embedding_kwargs)
+            if not isinstance(embedding_kwargs, dict):
+                print("Error: --embedding-kwargs must be a JSON object/dict")
+                return 1
+            print(f"Embedding kwargs: {embedding_kwargs}")
+        except json.JSONDecodeError as e:
+            print(f"Error parsing --embedding-kwargs JSON: {e}")
+            return 1
+
         # Load embedding model
         print(f"Loading embedding model: {args.embedding_model}")
         try:
-            embedding_model = SentenceTransformerEmbeddings(args.embedding_model)
+            embedding_model = SentenceTransformerEmbeddings(args.embedding_model, **embedding_kwargs)
         except Exception as e:
             print(f"Error loading embedding model '{args.embedding_model}': {e}")
             print("Please check that the model name is correct and available")
@@ -169,6 +283,25 @@ def main():
                 "Please check that the path contains a valid Langchain FAISS database"
             )
             return 1
+
+        # Handle conversion mode
+        if args.convert_embeddings:
+            try:
+                # Extract batch_size from embedding_kwargs if provided, otherwise use default
+                batch_size = embedding_kwargs.get("batch_size", 32)
+                convert_embeddings(
+                    vectorstore=vectorstore,
+                    embedding_model=embedding_model,
+                    output_path=args.output_db_path,
+                    batch_size=batch_size,
+                )
+                print("\n=== Conversion completed successfully ===")
+                return 0
+            except Exception as e:
+                import traceback
+                print(f"Error during conversion: {e}")
+                print(f"Traceback:\n{traceback.format_exc()}")
+                return 1
 
         # If metadata_keys is '*', extract all unique keys from the database
         if metadata_keys == ["*"]:
