@@ -24,4 +24,4 @@ GPLv3
 
 ## Development
 
-This project was created with assistance from [aider.chat](https://github.com/Aider-AI/aider/).
+This project was created with assistance from [aider.chat](https://github.com/Aider-AI/aider/). More precisely from using [AiderBuilder](https://github.com/thiswillbeyourgithub/AiderBuilder).
