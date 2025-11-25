@@ -19,7 +19,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="thiswillbeyourgithub",
-    url="https://github.com/thiswillbeyourgithub/gradioSearch",
+    url="https://github.com/thiswillbeyourgithub/gradioSearcher",
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
