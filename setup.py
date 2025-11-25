@@ -18,9 +18,8 @@ setup(
     description="A CLI tool for searching FAISS vector databases with Gradio GUI",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="TODO",
-    author_email="TODO",
-    url="TODO",
+    author="thiswillbeyourgithub",
+    url="https://github.com/thiswillbeyourgithub/gradioSearch",
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
