@@ -1,8 +1,8 @@
 # gradioSearch
 
-A CLI tool for searching FAISS vector databases with a Gradio GUI interface.
-
 **Work in progress.**
+
+A WebUI tool for searching FAISS vector databases via a Gradio GUI interface. Made initially to inspect databases from [wdoc](https://github.com/thiswillbeyourgithub/wdoc).
 
 ## Installation
 
