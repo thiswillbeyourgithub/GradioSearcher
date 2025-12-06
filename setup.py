@@ -27,8 +27,9 @@ setup(
         "pandas==2.3.3",
         "langchain-community==0.4.1",
         "sentence-transformers==5.1.2",
-        "tqdm==4.67.1",
-        "beartype==0.22.6"
+        "tqdm>=4.67.1",
+        "beartype>=0.22.6",
+        "faiss-cpu>=1.13.1"
     ],
     entry_points={
         "console_scripts": [
