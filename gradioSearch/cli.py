@@ -208,15 +208,10 @@ def main():
     except SystemExit:
         return 1
 
-    # Validate db_path exists
+    # Validate db_path exists (can be either directory for FAISS or file for pickle)
     db_path = Path(args.db_path)
     if not db_path.exists():
         print(f"Error: Database path '{args.db_path}' does not exist")
-        return 1
-
-    # Validate db_path is a directory
-    if not db_path.is_dir():
-        print(f"Error: Database path '{args.db_path}' is not a directory")
         return 1
 
     # Validate topk is positive
