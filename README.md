@@ -6,6 +6,14 @@ A WebUI tool for searching FAISS vector databases via a Gradio GUI interface. Ma
 
 ## Installation
 
+Install from PyPI:
+
+```bash
+uv pip install gradioSearch
+```
+
+Or for development:
+
 ```bash
 git clone https://github.com/thiswillbeyourgithub/gradioSearch.git
 cd gradioSearch
