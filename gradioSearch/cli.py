@@ -7,11 +7,13 @@ import sys
 from pathlib import Path
 from tqdm import tqdm
 import json
+import pickle
 
 # from langchain_community.vectorstores import FAISS
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any
 from langchain_core.embeddings import Embeddings
+from langchain_core.documents import Document
 from .utils.gui import launch_gui
 from .utils.compressed_faiss import CompressedFAISS as FAISS
 
@@ -269,10 +271,54 @@ def main():
             )
         except Exception as e:
             print(f"Error loading FAISS database from '{args.db_path}': {e}")
-            print(
-                "Please check that the path contains a valid Langchain FAISS database"
-            )
-            return 1
+            print("Attempting to load as pickled documents list...")
+            
+            # Fallback: try to load as a pickle file containing a list of Documents
+            # This allows converting a pickled list of documents into a FAISS database
+            try:
+                db_path = Path(args.db_path)
+                with open(db_path, 'rb') as f:
+                    unpickled_data = pickle.load(f)
+                
+                # Validate that it's a list of Documents
+                if not isinstance(unpickled_data, list):
+                    print("Error: Pickled data is not a list")
+                    return 1
+                
+                if not unpickled_data:
+                    print("Error: Pickled list is empty")
+                    return 1
+                
+                # Check if items are Documents by checking for required attributes
+                # We check the first item as a sample
+                first_item = unpickled_data[0]
+                if not (hasattr(first_item, 'page_content') and hasattr(first_item, 'metadata')):
+                    print("Error: Pickled data doesn't contain valid Langchain Documents")
+                    print("Expected objects with 'page_content' and 'metadata' attributes")
+                    return 1
+                
+                print(f"Found {len(unpickled_data)} documents in pickle file")
+                print("Creating FAISS database from documents using provided embedding model...")
+                
+                # Create FAISS database from the documents
+                # This will embed all documents using the provided embedding model
+                vectorstore = FAISS.from_documents(
+                    documents=unpickled_data,
+                    embedding=embedding_model
+                )
+                
+                print("Successfully created FAISS database from pickled documents")
+                
+            except pickle.UnpicklingError as pickle_error:
+                print(f"Error unpickling file: {pickle_error}")
+                print("File is not a valid pickle file")
+                return 1
+            except Exception as fallback_error:
+                print(f"Error loading as pickled documents: {fallback_error}")
+                print("Please check that the path contains either:")
+                print("  - A valid Langchain FAISS database directory, or")
+                print("  - A pickle file containing a list of Langchain Documents")
+                return 1
 
         # Handle conversion mode
         if args.convert_embeddings:
