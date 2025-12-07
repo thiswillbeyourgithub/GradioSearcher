@@ -8,7 +8,9 @@ from typing import List, Dict, Any, Optional, Tuple
 import json
 
 
-def create_search_interface(search_function, metadata_keys: List[str], topk: int = 50) -> gr.Blocks:
+def create_search_interface(
+    search_function, metadata_keys: List[str], topk: int = 50
+) -> gr.Blocks:
     """
     Create Gradio interface for FAISS database search
 
@@ -59,28 +61,32 @@ def create_search_interface(search_function, metadata_keys: List[str], topk: int
             active_metadata_keys = []
             explicit_keys = []
             wildcard_index = -1
-        
+
             # First pass: identify explicit keys and wildcard position
             for i, key in enumerate(metadata_keys):
                 if key == "*":
                     wildcard_index = i
                 else:
                     explicit_keys.append(key)
-        
+
             # Second pass: build the ordered list
             if wildcard_index >= 0:
                 # Keys before wildcard
                 active_metadata_keys.extend(metadata_keys[:wildcard_index])
-            
+
                 # Remaining keys (all keys minus explicit ones), sorted
-                remaining_keys = sorted(list(all_metadata_keys_with_values - set(explicit_keys)))
+                remaining_keys = sorted(
+                    list(all_metadata_keys_with_values - set(explicit_keys))
+                )
                 active_metadata_keys.extend(remaining_keys)
-            
+
                 # Keys after wildcard
-                active_metadata_keys.extend(metadata_keys[wildcard_index + 1:])
+                active_metadata_keys.extend(metadata_keys[wildcard_index + 1 :])
             else:
                 # No wildcard: only use explicitly specified keys that exist in results
-                active_metadata_keys = [k for k in metadata_keys if k in all_metadata_keys_with_values]
+                active_metadata_keys = [
+                    k for k in metadata_keys if k in all_metadata_keys_with_values
+                ]
 
         # Prepare dataframe data
         df_data = []
