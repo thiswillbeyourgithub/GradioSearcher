@@ -14,7 +14,7 @@ long_description = (
 
 setup(
     name="gradioSearch",
-    version="0.2.1",
+    version="0.2.2",
     description="A CLI tool for searching FAISS vector databases with Gradio GUI",
     long_description=long_description,
     long_description_content_type="text/markdown",
