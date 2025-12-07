@@ -219,8 +219,25 @@ def main():
         print(f"Error: topk must be positive, got {args.topk}")
         return 1
 
+    # Parse metadata_keys argument
+    metadata_keys_input = args.metadata_keys.strip()
+    if metadata_keys_input == "*":
+        metadata_keys = ["*"]
+    else:
+        try:
+            metadata_keys = [
+                key.strip() for key in metadata_keys_input.split(",") if key.strip()
+            ]
+            if not metadata_keys:
+                print("Error: metadata_keys cannot be empty")
+                return 1
+        except Exception as e:
+            print(f"Error parsing metadata_keys: {e}")
+            return 1
+
     print(f"Database path: {args.db_path}")
     print(f"Embedding model: {args.embedding_model}")
+    print(f"Metadata keys: {metadata_keys}")
     print(f"Top-k results: {args.topk}")
 
     # Validate conversion mode arguments
@@ -391,7 +408,7 @@ def main():
         # Launch GUI
         print("Starting Gradio interface...")
         try:
-            launch_gui(search_function, args.topk)
+            launch_gui(search_function, metadata_keys, args.topk)
         except Exception as e:
             print(f"Error launching GUI: {e}")
             return 1

@@ -8,12 +8,13 @@ from typing import List, Dict, Any, Optional, Tuple
 import json
 
 
-def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
+def create_search_interface(search_function, metadata_keys: List[str], topk: int = 50) -> gr.Blocks:
     """
     Create Gradio interface for FAISS database search
 
     Args:
         search_function: Function that takes query string and topk, returns search results
+        metadata_keys: List of metadata keys to display and their order
         topk: Number of top results to retrieve
 
     Returns:
@@ -22,32 +23,64 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
 
     def format_search_results(
         results: List[Dict[str, Any]],
+        metadata_keys: List[str],
     ) -> pd.DataFrame:
         """
         Format search results into dataframe with dynamic columns.
-        Only includes metadata columns that have non-empty values in the results.
+        Filters and orders columns based on metadata_keys specification.
 
         Args:
             results: List of search result dictionaries with 'content', 'metadata', 'similarity_score'
+            metadata_keys: List of metadata keys to display. '*' means all remaining keys.
+                          e.g., ['A', 'B', '*'] shows A, B first, then all other keys
 
         Returns:
-            DataFrame with dynamic columns based on non-empty metadata
+            DataFrame with columns ordered according to metadata_keys
         """
         if not results:
             # Return empty dataframe with basic columns
             return pd.DataFrame(columns=["Similarity", "Content"])
 
         # Scan all results to find metadata keys with non-empty values
-        metadata_keys_with_values = set()
+        all_metadata_keys_with_values = set()
         for result in results:
             metadata = result.get("metadata", {})
             for key, value in metadata.items():
                 # Include key if value is non-empty (not None, not empty string, not empty list, etc.)
                 if value is not None and value != "" and value != [] and value != {}:
-                    metadata_keys_with_values.add(key)
+                    all_metadata_keys_with_values.add(key)
 
-        # Sort metadata keys for consistent column ordering
-        active_metadata_keys = sorted(list(metadata_keys_with_values))
+        # Process metadata_keys specification to determine column order
+        if metadata_keys == ["*"]:
+            # Show all metadata columns, sorted alphabetically
+            active_metadata_keys = sorted(list(all_metadata_keys_with_values))
+        else:
+            # Build ordered list based on metadata_keys specification
+            active_metadata_keys = []
+            explicit_keys = []
+            wildcard_index = -1
+        
+            # First pass: identify explicit keys and wildcard position
+            for i, key in enumerate(metadata_keys):
+                if key == "*":
+                    wildcard_index = i
+                else:
+                    explicit_keys.append(key)
+        
+            # Second pass: build the ordered list
+            if wildcard_index >= 0:
+                # Keys before wildcard
+                active_metadata_keys.extend(metadata_keys[:wildcard_index])
+            
+                # Remaining keys (all keys minus explicit ones), sorted
+                remaining_keys = sorted(list(all_metadata_keys_with_values - set(explicit_keys)))
+                active_metadata_keys.extend(remaining_keys)
+            
+                # Keys after wildcard
+                active_metadata_keys.extend(metadata_keys[wildcard_index + 1:])
+            else:
+                # No wildcard: only use explicitly specified keys that exist in results
+                active_metadata_keys = [k for k in metadata_keys if k in all_metadata_keys_with_values]
 
         # Prepare dataframe data
         df_data = []
@@ -120,14 +153,14 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
         # Perform the search with topk parameter (empty queries return initial documents)
         results = search_function(query, topk_value)
 
-        # Format results for display with dynamic columns
-        df = format_search_results(results)
+        # Format results for display with filtered/ordered columns
+        df = format_search_results(results, metadata_keys)
 
         return df, "", "", results
 
     # Get initial results to populate the dataframe on load
     initial_results = search_function("", topk)
-    initial_df = format_search_results(initial_results)
+    initial_df = format_search_results(initial_results, metadata_keys)
 
     # Create the Gradio interface
     with gr.Blocks(
@@ -208,6 +241,7 @@ def create_search_interface(search_function, topk: int = 50) -> gr.Blocks:
 
 def launch_gui(
     search_function,
+    metadata_keys: List[str],
     topk: int = 50,
     share: bool = False,
     server_port: Optional[int] = None,
@@ -217,9 +251,10 @@ def launch_gui(
 
     Args:
         search_function: Function that performs the search
+        metadata_keys: List of metadata keys to display and their order
         topk: Number of top results to retrieve
         share: Whether to create a public link
         server_port: Port to run the server on
     """
-    interface = create_search_interface(search_function, topk)
+    interface = create_search_interface(search_function, metadata_keys, topk)
     interface.launch(share=share, server_port=server_port, server_name="0.0.0.0")
