@@ -28,7 +28,7 @@ python -m gradioSearch --help
 
 ## License
 
-GPLv3
+AGPLv3
 
 ## Development
 
